@@ -56,6 +56,8 @@ public:
 	bool is_starting_dragging;
 	int dragx;
 	int dragy;
+	int bigcard_code;
+	float bigcard_zoom;
 	size_t pre_mainc;
 	size_t pre_extrac;
 	size_t pre_sidec;
@@ -65,7 +67,7 @@ public:
 	int prev_sel;
 	bool is_modified;
 
-	std::unordered_map<int, int>* filterList;
+	const std::unordered_map<int, int>* filterList;
 	std::vector<code_pointer> results;
 	wchar_t result_string[8];
 };

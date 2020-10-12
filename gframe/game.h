@@ -33,6 +33,7 @@ struct Config {
 	int chkWaitChain;
 	int chkIgnore1;
 	int chkIgnore2;
+	int default_rule;
 	int hide_setname;
 	int hide_hint_button;
 	int control_mode;
@@ -45,6 +46,7 @@ struct Config {
 	int enable_bot_mode;
 	int quick_animation;
 	int auto_save_replay;
+	int draw_single_chain;
 	int prefer_expansion_script;
 	bool enable_sound;
 	bool enable_music;
@@ -90,6 +92,7 @@ struct BotInfo {
 	wchar_t desc[256];
 	bool support_master_rule_3;
 	bool support_new_master_rule;
+	bool support_master_rule_2020;
 };
 
 struct FadingUnit {
@@ -134,7 +137,7 @@ public:
 	void HideElement(irr::gui::IGUIElement* element, bool set_action = false);
 	void PopupElement(irr::gui::IGUIElement* element, int hideframe = 0);
 	void WaitFrameSignal(int frame);
-	void DrawThumb(code_pointer cp, position2di pos, std::unordered_map<int, int>* lflist, bool drag = false);
+	void DrawThumb(code_pointer cp, position2di pos, const std::unordered_map<int,int>* lflist, bool drag = false);
 	void DrawDeckBd();
 	void LoadConfig();
 	void SaveConfig();
@@ -146,6 +149,8 @@ public:
 	void AddDebugMsg(const char* msgbuf);
 	void ErrorLog(const char* msgbuf);
 	void ClearTextures();
+	void CloseGameButtons();
+	void CloseGameWindow();
 	void CloseDuelWindow();
 
 	int LocalPlayer(int player);
@@ -154,6 +159,12 @@ public:
 	bool HasFocus(EGUI_ELEMENT_TYPE type) const {
 		irr::gui::IGUIElement* focus = env->getFocus();
 		return focus && focus->hasType(type);
+	}
+
+	void TrimText(irr::gui::IGUIElement* editbox) const {
+		irr::core::stringw text(editbox->getText());
+		text.trim();
+		editbox->setText(text.c_str());
 	}
 
 	void OnResize();
@@ -274,6 +285,7 @@ public:
 	irr::gui::IGUICheckBox* chkWaitChain;
 	irr::gui::IGUICheckBox* chkQuickAnimation;
 	irr::gui::IGUICheckBox* chkAutoSaveReplay;
+	irr::gui::IGUICheckBox* chkDrawSingleChain;
 	irr::gui::IGUIWindow* tabSystem;
 	irr::gui::IGUIElement* elmTabSystemLast;
 	irr::gui::IGUIScrollBar* scrTabSystem;
@@ -354,7 +366,7 @@ public:
 	irr::gui::IGUIStaticText* stBotInfo;
 	irr::gui::IGUIButton* btnStartBot;
 	irr::gui::IGUIButton* btnBotCancel;
-	irr::gui::IGUICheckBox* chkBotOldRule;
+	irr::gui::IGUIComboBox* cbBotRule;
 	irr::gui::IGUICheckBox* chkBotHand;
 	irr::gui::IGUICheckBox* chkBotNoCheckDeck;
 	irr::gui::IGUICheckBox* chkBotNoShuffleDeck;
@@ -415,6 +427,7 @@ public:
 	//announce number
 	irr::gui::IGUIWindow* wANNumber;
 	irr::gui::IGUIComboBox* cbANNumber;
+	irr::gui::IGUIButton* btnANNumber[12];
 	irr::gui::IGUIButton* btnANNumberOK;
 	//announce card
 	irr::gui::IGUIWindow* wANCard;
@@ -527,6 +540,13 @@ public:
 	irr::gui::IGUIButton* btnChainWhenAvail;
 	//cancel or finish
 	irr::gui::IGUIButton* btnCancelOrFinish;
+	//big picture
+	irr::gui::IGUIWindow* wBigCard;
+	irr::gui::IGUIImage* imgBigCard;
+	irr::gui::IGUIButton* btnBigCardOriginalSize;
+	irr::gui::IGUIButton* btnBigCardZoomIn;
+	irr::gui::IGUIButton* btnBigCardZoomOut;
+	irr::gui::IGUIButton* btnBigCardClose;
 };
 
 extern Game* mainGame;
@@ -593,7 +613,7 @@ extern Game* mainGame;
 #define BUTTON_CANCEL_SINGLEPLAY	152
 #define LISTBOX_BOT_LIST			153
 #define BUTTON_BOT_START			154
-#define CHECKBOX_BOT_OLD_RULE		155
+#define COMBOBOX_BOT_RULE			155
 #define EDITBOX_CHAT				199
 
 #define BUTTON_MSG_OK				200
@@ -650,9 +670,18 @@ extern Game* mainGame;
 #define BUTTON_CHAIN_WHENAVAIL		266
 #define BUTTON_CANCEL_OR_FINISH		267
 #define BUTTON_PHASE				268
-#define BUTTON_CLEAR_LOG			270
-#define LISTBOX_LOG					271
-#define SCROLL_CARDTEXT				280
+#define BUTTON_ANNUMBER_1			270
+#define BUTTON_ANNUMBER_2			271
+#define BUTTON_ANNUMBER_3			272
+#define BUTTON_ANNUMBER_4			273
+#define BUTTON_ANNUMBER_5			274
+#define BUTTON_ANNUMBER_6			275
+#define BUTTON_ANNUMBER_7			276
+#define BUTTON_ANNUMBER_8			277
+#define BUTTON_ANNUMBER_9			278
+#define BUTTON_ANNUMBER_10			279
+#define BUTTON_ANNUMBER_11			280
+#define BUTTON_ANNUMBER_12			281
 #define BUTTON_DISPLAY_0			290
 #define BUTTON_DISPLAY_1			291
 #define BUTTON_DISPLAY_2			292
@@ -687,6 +716,10 @@ extern Game* mainGame;
 #define BUTTON_MARKS_FILTER			322
 #define BUTTON_MARKERS_OK			323
 #define COMBOBOX_SORTTYPE			324
+#define EDITBOX_INPUTS				325
+#define BUTTON_CLEAR_LOG			350
+#define LISTBOX_LOG					351
+#define SCROLL_CARDTEXT				352
 #define CHECKBOX_AUTO_SEARCH		360
 #define CHECKBOX_ENABLE_SOUND		361
 #define CHECKBOX_ENABLE_MUSIC		362
@@ -701,8 +734,13 @@ extern Game* mainGame;
 #define SCROLL_TAB_SYSTEM			371
 #define CHECKBOX_MULTI_KEYWORDS		372
 #define CHECKBOX_PREFER_EXPANSION	373
+#define CHECKBOX_DRAW_SINGLE_CHAIN	374
+#define BUTTON_BIG_CARD_CLOSE		380
+#define BUTTON_BIG_CARD_ZOOM_IN		381
+#define BUTTON_BIG_CARD_ZOOM_OUT	382
+#define BUTTON_BIG_CARD_ORIG_SIZE	383
 
-#define DEFAULT_DUEL_RULE			4
+#define DEFAULT_DUEL_RULE			5
 
 #define CARD_ARTWORK_VERSIONS_OFFSET	10
 #endif // GAME_H
